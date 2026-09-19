@@ -3,14 +3,20 @@
 from collections.abc import Iterable
 
 from capabilities import MODEL_CAPABILITIES
+from health import HealthTracker
 from providers import Provider
 
 
 class Router:
     """Choose an available provider using static task capabilities."""
 
-    def __init__(self, providers: Iterable[Provider] = ()) -> None:
+    def __init__(
+        self,
+        providers: Iterable[Provider] = (),
+        health: HealthTracker | None = None,
+    ) -> None:
         self.providers = list(providers)
+        self.health = health or HealthTracker()
 
     def register(self, provider: Provider) -> None:
         """Add a provider to the router's ordered provider list."""
@@ -26,7 +32,12 @@ class Router:
         for registration_order, provider in enumerate(self.providers):
             model = getattr(provider, "model", None)
             capability = MODEL_CAPABILITIES.get(model)
-            if capability and task in capability.tasks and provider.is_available():
+            if (
+                capability
+                and task in capability.tasks
+                and provider.is_available()
+                and self.health.can_use(provider)
+            ):
                 candidates.append((capability.priority, registration_order, provider))
 
         if candidates:

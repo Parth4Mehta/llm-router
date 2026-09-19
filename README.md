@@ -12,6 +12,10 @@ Only exact model IDs listed in the [awesome-free-llm-apis repository](https://gi
 `capabilities.py` records the initial task tags and manual priorities for those
 approved models. It is data only; routing decisions will be added separately.
 
+`health.py` provides an in-memory health and quota tracker. Callers record
+requests and outcomes; the router skips providers during a cooldown or after a
+configured request quota is reached.
+
 ## Local API keys
 
 Copy `.env.example` to `.env` and add your provider keys. The `.env` file is
