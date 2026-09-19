@@ -1,7 +1,17 @@
 """Interfaces for LLM provider adapters."""
 
+import os
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
+
+import httpx
+from dotenv import load_dotenv
+
+from model_catalog import OPENROUTER_MODELS
+
+
+load_dotenv(dotenv_path=Path(__file__).with_name(".env"), override=True)
 
 
 class Provider(ABC):
@@ -21,4 +31,54 @@ class Provider(ABC):
         """Send a prompt and return the provider's text response."""
 
 
-__all__ = ["Provider"]
+class OpenRouterProvider(Provider):
+    """Adapter for OpenRouter's OpenAI-compatible chat completions API."""
+
+    def __init__(
+        self,
+        model: str,
+        api_key: str | None = None,
+        base_url: str = "https://openrouter.ai/api/v1",
+        client: httpx.Client | None = None,
+    ) -> None:
+        if model not in OPENROUTER_MODELS:
+            raise ValueError(
+                "Model is not in the approved awesome-free-llm-apis catalog: "
+                f"{model}"
+            )
+        self.model = model
+        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+        self.base_url = base_url.rstrip("/")
+        self.client = client or httpx.Client(timeout=60.0)
+
+    @property
+    def name(self) -> str:
+        return "openrouter"
+
+    def is_available(self) -> bool:
+        return bool(self.api_key)
+
+    def complete(self, prompt: str, **options: Any) -> str:
+        if not self.is_available():
+            raise RuntimeError("OPENROUTER_API_KEY is not configured")
+
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            **options,
+        }
+        response = self.client.post(
+            f"{self.base_url}/chat/completions",
+            headers={"Authorization": f"Bearer {self.api_key}"},
+            json=payload,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        try:
+            return data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as error:
+            raise ValueError("OpenRouter returned an unexpected response") from error
+
+
+__all__ = ["OpenRouterProvider", "Provider"]
