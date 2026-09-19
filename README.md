@@ -15,6 +15,26 @@ approved models. It is data only; routing decisions will be added separately.
 Provider adapters currently include OpenRouter, Mistral, and Groq. Each adapter
 accepts only model IDs recorded in `model_catalog.py`.
 
+## CLI usage
+
+Install dependencies, configure the selected provider key in `.env`, and send
+one prompt:
+
+```powershell
+python cli.py "Explain dynamic programming in one paragraph"
+python cli.py --provider mistral "Summarize the idea of recursion"
+python cli.py --provider openrouter --model openai/gpt-oss-20b:free "Write a haiku"
+```
+
+The same adapters can be imported directly by another project:
+
+```python
+from providers import GroqProvider
+
+provider = GroqProvider(model="openai/gpt-oss-120b")
+answer = provider.complete("Explain probability simply")
+```
+
 `health.py` provides an in-memory health and quota tracker. Callers record
 requests and outcomes; the router skips providers during a cooldown or after a
 configured request quota is reached.
