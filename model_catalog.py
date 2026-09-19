@@ -20,5 +20,22 @@ OPENROUTER_MODELS = frozenset(
     }
 )
 
+MISTRAL_MODELS = frozenset(
+    {
+        "mistral-medium-3-5",
+        "mistral-small-2603",
+        "mistral-large-2512",
+        "ministral-8b-2512",
+        "codestral-2508",
+        "ministral-3b-2512",
+        "ministral-14b-2512",
+    }
+)
 
-__all__ = ["MODEL_SOURCE_DATE", "MODEL_SOURCE_URL", "OPENROUTER_MODELS"]
+
+__all__ = [
+    "MISTRAL_MODELS",
+    "MODEL_SOURCE_DATE",
+    "MODEL_SOURCE_URL",
+    "OPENROUTER_MODELS",
+]

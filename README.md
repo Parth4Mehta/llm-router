@@ -26,5 +26,6 @@ over same-named keys left in the PowerShell environment.
 
 ```text
 OPENROUTER_API_KEY=your-openrouter-key
+MISTRAL_API_KEY=your-mistral-key
 GROQ_API_KEY=your-groq-key
 ```
