@@ -12,6 +12,9 @@ Only exact model IDs listed in the [awesome-free-llm-apis repository](https://gi
 `capabilities.py` records the initial task tags and manual priorities for those
 approved models. It is data only; routing decisions will be added separately.
 
+Provider adapters currently include OpenRouter, Mistral, and Groq. Each adapter
+accepts only model IDs recorded in `model_catalog.py`.
+
 `health.py` provides an in-memory health and quota tracker. Callers record
 requests and outcomes; the router skips providers during a cooldown or after a
 configured request quota is reached.

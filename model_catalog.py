@@ -32,8 +32,19 @@ MISTRAL_MODELS = frozenset(
     }
 )
 
+GROQ_MODELS = frozenset(
+    {
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "groq/compound",
+        "groq/compound-mini",
+        "qwen/qwen3.6-27b",
+    }
+)
+
 
 __all__ = [
+    "GROQ_MODELS",
     "MISTRAL_MODELS",
     "MODEL_SOURCE_DATE",
     "MODEL_SOURCE_URL",
