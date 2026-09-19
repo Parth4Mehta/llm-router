@@ -9,6 +9,9 @@ and usage examples will be added in later commits.
 
 Only exact model IDs listed in the [awesome-free-llm-apis repository](https://github.com/mnfst/awesome-free-llm-apis) are allowed. The initial OpenRouter catalog is recorded in `model_catalog.py` and must be refreshed when the source list changes.
 
+`capabilities.py` records the initial task tags and manual priorities for those
+approved models. It is data only; routing decisions will be added separately.
+
 ## Local API keys
 
 Copy `.env.example` to `.env` and add your provider keys. The `.env` file is
