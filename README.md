@@ -1,24 +1,40 @@
 # llm-router
 
-A small Python library that routes prompts to available free LLM APIs.
+Small Python library for routing prompts across free-tier LLM APIs.
 
-The project is being built incrementally. Provider adapters, routing logic,
-and usage examples will be added in later commits.
+## Install
 
-## Model policy
+For local development:
 
-Only exact model IDs listed in the [awesome-free-llm-apis repository](https://github.com/mnfst/awesome-free-llm-apis) are allowed. The initial OpenRouter catalog is recorded in `model_catalog.py` and must be refreshed when the source list changes.
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
 
-`capabilities.py` records the initial task tags and manual priorities for those
-approved models. It is data only; routing decisions will be added separately.
+For use from another Python project:
 
-Provider adapters currently include OpenRouter, Mistral, and Groq. Each adapter
-accepts only model IDs recorded in `model_catalog.py`.
+```powershell
+python -m pip install .
+```
 
-## CLI usage
+## Configure keys
 
-Install dependencies, configure the selected provider key in `.env`, and send
-one prompt:
+Copy `.env.example` to `.env` and add keys for the providers you use. The
+`.env` file is ignored by Git and must never be committed.
+
+```text
+OPENROUTER_API_KEY=your-openrouter-key
+MISTRAL_API_KEY=your-mistral-key
+GROQ_API_KEY=your-groq-key
+```
+
+The library loads the project `.env` explicitly, so its values take precedence
+over same-named keys left in the PowerShell environment.
+
+## CLI
+
+Send one prompt through a selected provider:
 
 ```powershell
 python cli.py "Explain dynamic programming in one paragraph"
@@ -35,20 +51,29 @@ provider = GroqProvider(model="openai/gpt-oss-120b")
 answer = provider.complete("Explain probability simply")
 ```
 
-`health.py` provides an in-memory health and quota tracker. Callers record
-requests and outcomes; the router skips providers during a cooldown or after a
-configured request quota is reached.
+## Routing
 
-## Local API keys
+`Router.select(task_type)` chooses an available model using the static task
+capability map and manual priority. `HealthTracker` adds in-memory cooldown and
+quota checks. Retries, persistence, and automatic task classification are not
+included yet.
 
-Copy `.env.example` to `.env` and add your provider keys. The `.env` file is
-ignored by Git and must never be committed.
+## Model policy
 
-The library loads the project `.env` explicitly, so its values take precedence
-over same-named keys left in the PowerShell environment.
+Only exact model IDs listed in the [awesome-free-llm-apis repository](https://github.com/mnfst/awesome-free-llm-apis) are allowed. The snapshot date and provider model IDs are recorded in `model_catalog.py`; refresh that file when the source list changes.
 
-```text
-OPENROUTER_API_KEY=your-openrouter-key
-MISTRAL_API_KEY=your-mistral-key
-GROQ_API_KEY=your-groq-key
+Current adapters: OpenRouter, Mistral, and Groq.
+
+## Privacy
+
+Prompts are sent to the selected third-party provider. Free-tier providers may
+log or use prompts according to their terms. Do not send secrets or sensitive
+personal data unless you have reviewed the provider's policy.
+
+## Tests
+
+```powershell
+pytest
 ```
+
+The GitHub Actions workflow runs the same test suite on pushes and pull requests.
