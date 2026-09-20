@@ -57,6 +57,9 @@ def test_cli_builds_curated_provider_adapters():
     models = {provider.model for provider in providers}
 
     assert "openai/gpt-oss-120b" in models
+    assert "groq/compound" in models
+    assert "groq/compound-mini" in models
+    assert "qwen/qwen3.6-27b" in models
     assert "mistral-small-2603" in models
     assert {provider.name for provider in providers} == {
         "groq",
