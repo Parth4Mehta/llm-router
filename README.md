@@ -64,6 +64,10 @@ Only exact model IDs listed in the [awesome-free-llm-apis repository](https://gi
 
 Current adapters: OpenRouter, Mistral, and Groq.
 
+The capability registry currently contains a curated subset of models from
+each adapter. It records heuristic task suitability, not guaranteed quality;
+automatic query classification and cross-provider fallback are planned next.
+
 ## Privacy
 
 Prompts are sent to the selected third-party provider. Free-tier providers may

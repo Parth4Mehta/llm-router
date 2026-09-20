@@ -2,6 +2,8 @@ import httpx
 import pytest
 
 from health import HealthTracker
+from capabilities import MODEL_CAPABILITIES
+from model_catalog import GROQ_MODELS, MISTRAL_MODELS, OPENROUTER_MODELS
 from providers import GroqProvider, MistralProvider
 from router import Router
 
@@ -22,6 +24,20 @@ def test_router_selects_highest_priority_matching_model():
 
     assert Router([general, code]).select("coding") is code
     assert Router([general, code]).select("GENERAL") is general
+
+
+def test_capabilities_cover_curated_models_from_each_provider():
+    assert {"openai/gpt-oss-120b", "openai/gpt-oss-20b"}.issubset(
+        GROQ_MODELS
+    )
+    assert {"mistral-medium-3-5", "mistral-small-2603", "codestral-2508"}.issubset(
+        MISTRAL_MODELS
+    )
+    assert set(MODEL_CAPABILITIES).issubset(
+        OPENROUTER_MODELS | GROQ_MODELS | MISTRAL_MODELS
+    )
+    assert MODEL_CAPABILITIES["codestral-2508"].provider == "mistral"
+    assert "coding" in MODEL_CAPABILITIES["codestral-2508"].tasks
 
 
 def test_router_skips_provider_in_cooldown():
