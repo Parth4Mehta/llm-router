@@ -73,6 +73,45 @@ python cli.py --provider openrouter --model openai/gpt-oss-20b:free "Write a hai
 
 Only exact model IDs recorded in `model_catalog.py` are accepted.
 
+## Available Models
+
+These are all 19 model IDs currently accepted by the project. They all have a
+free-tier route in the linked catalog, but require the relevant provider key
+unless the provider offers anonymous access. Free quotas and eligibility can
+change.
+
+**Groq: free tier with `GROQ_API_KEY`**
+
+- `openai/gpt-oss-120b` - general reasoning, math, and planning.
+- `openai/gpt-oss-20b` - chat, writing, and routine requests.
+- `groq/compound` - general compound model workflows.
+- `groq/compound-mini` - smaller compound workflows.
+- `qwen/qwen3.6-27b` - general text tasks.
+
+**Mistral: free mode with `MISTRAL_API_KEY`**
+
+- `mistral-medium-3-5` - reasoning, planning, coding, and multimodal work.
+- `mistral-small-2603` - efficient general, reasoning, coding, and writing.
+- `mistral-large-2512` - general multimodal tasks.
+- `ministral-8b-2512` - efficient text and vision tasks.
+- `codestral-2508` - code generation and code review.
+- `ministral-3b-2512` - lightweight text and vision tasks.
+- `ministral-14b-2512` - text and vision tasks.
+
+**OpenRouter: free models with `:free` IDs and `OPENROUTER_API_KEY`**
+
+- `openai/gpt-oss-120b:free` - general reasoning, math, and planning.
+- `openai/gpt-oss-20b:free` - chat, writing, and summarization.
+- `google/gemma-4-31b-it:free` - general text and image tasks.
+- `google/gemma-4-26b-a4b-it:free` - efficient text and image tasks.
+- `cohere/north-mini-code:free` - coding and code review.
+- `poolside/laguna-s-2.1:free` - coding and technical writing.
+- `poolside/laguna-xs-2.1:free` - lighter coding and technical writing.
+
+Automatic routing currently uses the curated models defined in
+`capabilities.py`, not every model above. All 19 remain available for explicit
+provider/model selection.
+
 ## 5. Test the Project
 
 Run the offline test suite:
