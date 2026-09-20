@@ -48,12 +48,23 @@ def main() -> None:
         provider: Provider = PROVIDERS[args.provider](model=model)
         if not provider.is_available():
             raise SystemExit(f"{provider.name} API key is missing from .env")
-        print(provider.complete(args.prompt))
+        response = provider.complete(args.prompt)
+        selected_provider = provider
+        print(f"Routed to {selected_provider.name}/{selected_provider.model}")
+        print("Credits remaining: unavailable")
+        print(response)
         return
 
     if args.model:
         raise SystemExit("--model requires --provider")
-    print(Router(configured_providers()).ask(args.prompt))
+    router = Router(configured_providers())
+    response = router.ask(args.prompt)
+    selected_provider = router.last_provider
+    if selected_provider is None:
+        raise SystemExit("The router returned no selected provider")
+    print(f"Routed to {selected_provider.name}/{selected_provider.model}")
+    print("Credits remaining: unavailable")
+    print(response)
 
 
 if __name__ == "__main__":

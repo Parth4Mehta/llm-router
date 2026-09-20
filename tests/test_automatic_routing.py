@@ -23,7 +23,10 @@ def test_ask_routes_coding_query_to_code_model():
     general = FakeProvider("groq", "openai/gpt-oss-120b")
     code = FakeProvider("mistral", "codestral-2508", response="code answer")
 
-    assert Router([general, code]).ask("Review this Python function") == "code answer"
+    router = Router([general, code])
+
+    assert router.ask("Review this Python function") == "code answer"
+    assert router.last_provider is code
 
 
 def test_ask_uses_next_candidate_after_first_failure():

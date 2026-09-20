@@ -40,6 +40,17 @@ The router classifies the prompt, matches task capabilities, skips providers
 without usable keys, checks health/quota state, and tries candidates by
 priority. Each candidate is attempted at most once.
 
+The CLI prints the selected route before the answer:
+
+```text
+Routed to groq/openai/gpt-oss-120b
+Credits remaining: unavailable
+<answer>
+```
+
+Provider credit balances are not exposed by the current APIs, so the project
+does not guess them.
+
 ## 3. Use It as a Library
 
 Use this when integrating the router into another Python project:

@@ -32,6 +32,7 @@ class Router:
     ) -> None:
         self.providers = list(providers)
         self.health = health or HealthTracker()
+        self.last_provider: Provider | None = None
 
     def register(self, provider: Provider) -> None:
         """Add a provider to the router's ordered provider list."""
@@ -94,6 +95,7 @@ class Router:
                 continue
 
             self.health.record_success(provider)
+            self.last_provider = provider
             return response
 
         details = "; ".join(failures)
