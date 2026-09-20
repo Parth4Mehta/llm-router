@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from capabilities import MODEL_CAPABILITIES
+from classify import classify_query
 from health import HealthTracker
 from providers import Provider
 
@@ -15,6 +16,10 @@ class Candidate:
     provider: Provider
     priority: int
     registration_order: int
+
+
+class RoutingError(RuntimeError):
+    """Raised when no candidate can successfully answer a prompt."""
 
 
 class Router:
@@ -68,5 +73,33 @@ class Router:
         candidates.sort(key=lambda candidate: (candidate.priority, candidate.registration_order))
         return candidates
 
+    def ask(self, prompt: str) -> str:
+        """Classify a prompt and return the first successful provider response."""
+        classification = classify_query(prompt)
+        candidates = self.rank(classification.task_type)
+        if not candidates:
+            raise RoutingError(
+                f"No available provider supports task: {classification.task_type}"
+            )
 
-__all__ = ["Candidate", "Router"]
+        failures: list[str] = []
+        for candidate in candidates:
+            provider = candidate.provider
+            self.health.record_request(provider)
+            try:
+                response = provider.complete(prompt)
+            except Exception as error:
+                self.health.record_failure(provider)
+                failures.append(f"{provider.name}: {error}")
+                continue
+
+            self.health.record_success(provider)
+            return response
+
+        details = "; ".join(failures)
+        raise RoutingError(
+            f"All providers failed for task {classification.task_type}: {details}"
+        )
+
+
+__all__ = ["Candidate", "Router", "RoutingError"]

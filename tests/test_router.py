@@ -6,17 +6,24 @@ from health import HealthTracker
 from capabilities import MODEL_CAPABILITIES
 from model_catalog import GROQ_MODELS, MISTRAL_MODELS, OPENROUTER_MODELS
 from providers import GroqProvider, MistralProvider
-from router import Router
+from router import Router, RoutingError
 
 
 class FakeProvider:
-    def __init__(self, name, model, available=True):
+    def __init__(self, name, model, available=True, response="answer", error=None):
         self.name = name
         self.model = model
         self.available = available
+        self.response = response
+        self.error = error
 
     def is_available(self):
         return self.available
+
+    def complete(self, prompt):
+        if self.error:
+            raise self.error
+        return self.response
 
 
 @pytest.mark.parametrize(
@@ -70,6 +77,35 @@ def test_select_remains_compatibility_wrapper_for_rank():
     provider = FakeProvider("groq", "openai/gpt-oss-120b")
 
     assert Router([provider]).select("reasoning") is provider
+
+
+def test_ask_classifies_and_returns_first_successful_response():
+    provider = FakeProvider("groq", "openai/gpt-oss-120b", response="solved")
+    router = Router([provider])
+
+    assert router.ask("Calculate this probability") == "solved"
+    assert router.health.status(provider).successes == 1
+
+
+def test_ask_falls_back_after_provider_failure():
+    failed = FakeProvider(
+        "failed", "openai/gpt-oss-120b", error=RuntimeError("temporary failure")
+    )
+    backup = FakeProvider("backup", "openai/gpt-oss-20b", response="backup answer")
+    router = Router([failed, backup])
+
+    assert router.ask("Tell me something") == "backup answer"
+    assert router.health.status(failed).failures == 1
+    assert router.health.status(backup).successes == 1
+
+
+def test_ask_raises_clear_error_when_all_candidates_fail():
+    provider = FakeProvider(
+        "groq", "openai/gpt-oss-120b", error=RuntimeError("service unavailable")
+    )
+
+    with pytest.raises(RoutingError, match="All providers failed"):
+        Router([provider]).ask("Explain reasoning")
 
 
 def test_capabilities_cover_curated_models_from_each_provider():
