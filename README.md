@@ -1,142 +1,109 @@
 # llm-router
 
-Small Python library for routing prompts across free-tier LLM APIs.
+Route a question to the best configured free-tier LLM model for that task,
+then try the next suitable provider if the first one fails.
 
-## Install
+## 1. Setup
 
-For local development:
+From the repository folder in PowerShell:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-For use from another Python project:
+Open `.env` and add at least one key:
 
-```powershell
-python -m pip install .
-```
-
-## Configure keys
-
-Copy `.env.example` to `.env` and add keys for the providers you use. The
-`.env` file is ignored by Git and must never be committed.
-
-```text
-OPENROUTER_API_KEY=your-openrouter-key
-MISTRAL_API_KEY=your-mistral-key
+```env
 GROQ_API_KEY=your-groq-key
+MISTRAL_API_KEY=your-mistral-key
+OPENROUTER_API_KEY=your-openrouter-key
 ```
 
-The library loads the project `.env` explicitly, so its values take precedence
-over same-named keys left in the PowerShell environment.
+The project reads keys from its own `.env`. It is ignored by Git; never commit
+it or print it.
 
-## CLI
+## 2. Automatic CLI Use
 
-Send a prompt in automatic mode. The router classifies the query, chooses a
-compatible configured model, and tries the next candidate if the first fails:
+Ask a question without choosing a provider or model:
 
 ```powershell
-python cli.py "Explain dynamic programming in one paragraph"
+python cli.py "Explain dynamic programming simply"
 python cli.py "Review this Python function for bugs"
+python cli.py "Calculate the probability of drawing two aces"
 python cli.py "Plan a scalable web architecture"
 ```
 
-Use an explicit provider/model only when you want to override automatic
-routing:
+The router classifies the prompt, matches task capabilities, skips providers
+without usable keys, checks health/quota state, and tries candidates by
+priority. Each candidate is attempted at most once.
 
-```powershell
-python cli.py --provider mistral "Summarize the idea of recursion"
-python cli.py --provider openrouter --model openai/gpt-oss-20b:free "Write a haiku"
-```
+## 3. Use It as a Library
 
-The same adapters can be imported directly by another project:
-
-```python
-from providers import GroqProvider
-
-provider = GroqProvider(model="openai/gpt-oss-120b")
-answer = provider.complete("Explain probability simply")
-```
-
-## Routing
-
-The main library API is automatic:
+Use this when integrating the router into another Python project:
 
 ```python
 from providers import GroqProvider, MistralProvider
 from router import Router
 
-router = Router(
-	[
-		GroqProvider(model="openai/gpt-oss-120b"),
-		MistralProvider(model="codestral-2508"),
-	]
-)
+router = Router([
+    GroqProvider(model="openai/gpt-oss-120b"),
+    MistralProvider(model="codestral-2508"),
+])
 
 answer = router.ask("Review this Python function for bugs")
 print(answer)
 ```
 
-`Router.ask(prompt)`:
+`Router.ask()` handles classification, selection, fallback, and health updates.
+The adapters load the project `.env` automatically.
 
-1. Classifies the prompt using deterministic keyword and phrase rules.
-2. Matches the task to the static model capability registry.
-3. Skips providers without credentials, during cooldown, or over quota.
-4. Tries candidates in manual priority order.
-5. Records health and returns the first successful response.
+## 4. Explicit Provider Use
 
-Available task categories include coding, math, reasoning, research,
-summarization, writing, chat, planning, and general. Use `Router.rank(task)`
-to inspect candidates without sending a request. `Router.select(task)` remains
-available when only the first candidate is needed.
+Use an explicit provider when debugging or when you do not want automatic
+routing:
 
-Fallback is bounded: each ranked candidate is attempted at most once. The
-router does not retry indefinitely or use another LLM to classify the prompt.
+```powershell
+python cli.py --provider groq "Explain recursion"
+python cli.py --provider mistral --model codestral-2508 "Review this code"
+python cli.py --provider openrouter --model openai/gpt-oss-20b:free "Write a haiku"
+```
 
-## Model policy
+Only exact model IDs recorded in `model_catalog.py` are accepted.
 
-Only exact model IDs listed in the [awesome-free-llm-apis repository](https://github.com/mnfst/awesome-free-llm-apis) are allowed. The snapshot date and provider model IDs are recorded in `model_catalog.py`; refresh that file when the source list changes.
+## 5. Test the Project
 
-Current adapters: OpenRouter, Mistral, and Groq.
+Run the offline test suite:
 
-The capability registry currently contains a curated subset of models from
-each adapter. It records heuristic task suitability, not guaranteed quality;
-model quality and free-tier availability can change over time.
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
 
-Current curated roles include:
+Expected result is currently `23 passed`. These tests use fake providers and
+do not spend API quota.
 
-- Groq GPT-OSS 120B: general reasoning, math, and planning.
-- Groq GPT-OSS 20B: general chat, writing, and summarization.
-- Mistral Medium 3.5: reasoning, planning, coding, and multimodal work.
-- Mistral Small 4: efficient general, reasoning, coding, and writing tasks.
-- Mistral Codestral: coding and code review.
-- OpenRouter free models: general, reasoning, writing, and code roles as
-	recorded in `capabilities.py`.
+To make a real request through the automatic router, configure a key first:
 
-These are starting heuristics based on provider descriptions and the linked
-free-model catalog, not benchmark guarantees.
+```powershell
+python cli.py "Give me a short explanation of Bayes theorem"
+```
+
+## Useful For
+
+- Personal scripts that need one LLM interface.
+- Coding, debugging, and code review.
+- Math, probability, and reasoning questions.
+- Essays, rewriting, and summarization.
+- Architecture and project planning.
+- Applications that need provider fallback or quota awareness.
+
+Current adapters are Groq, Mistral, and OpenRouter. The model capability map is
+curated from [awesome-free-llm-apis](https://github.com/mnfst/awesome-free-llm-apis).
+Model suitability and free-tier limits are heuristics and can change.
 
 ## Privacy
 
-Prompts are sent to the selected third-party provider. Free-tier providers may
-log or use prompts according to their terms. Do not send secrets or sensitive
-personal data unless you have reviewed the provider's policy.
-
-## Tests
-
-```powershell
-pytest
-```
-
-The GitHub Actions workflow runs the same test suite on pushes and pull requests.
-
-## Current limitations
-
-- The classifier is rule-based and intentionally simple.
-- Capability metadata is manually curated and should be refreshed when the
-	upstream free-model list changes.
-- Health and quota state is in memory only.
-- No streaming, multimodal request contract, persistent quota store, or HTTP
-	service is included yet.
+Prompts are sent to third-party providers. Review their data policies and do
+not send passwords, API keys, or sensitive personal data.
