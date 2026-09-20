@@ -51,6 +51,27 @@ def test_router_selects_highest_priority_matching_model():
     assert Router([general, code]).select("GENERAL") is general
 
 
+def test_router_rank_returns_all_matching_providers_in_priority_order():
+    general_large = FakeProvider("large", "openai/gpt-oss-120b")
+    general_small = FakeProvider("small", "openai/gpt-oss-20b")
+    mistral = FakeProvider("mistral", "mistral-small-2603")
+
+    candidates = Router([general_small, mistral, general_large]).rank("general")
+
+    assert [candidate.provider for candidate in candidates] == [
+        general_large,
+        general_small,
+        mistral,
+    ]
+    assert [candidate.priority for candidate in candidates] == [1, 2, 2]
+
+
+def test_select_remains_compatibility_wrapper_for_rank():
+    provider = FakeProvider("groq", "openai/gpt-oss-120b")
+
+    assert Router([provider]).select("reasoning") is provider
+
+
 def test_capabilities_cover_curated_models_from_each_provider():
     assert {"openai/gpt-oss-120b", "openai/gpt-oss-20b"}.issubset(
         GROQ_MODELS
