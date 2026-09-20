@@ -1,6 +1,7 @@
 import httpx
 import pytest
 
+from classify import classify_query
 from health import HealthTracker
 from capabilities import MODEL_CAPABILITIES
 from model_catalog import GROQ_MODELS, MISTRAL_MODELS, OPENROUTER_MODELS
@@ -16,6 +17,30 @@ class FakeProvider:
 
     def is_available(self):
         return self.available
+
+
+@pytest.mark.parametrize(
+    ("prompt", "expected"),
+    [
+        ("Debug this Python function", "coding"),
+        ("Calculate the probability of this event", "math"),
+        ("Write an essay about climate change", "writing"),
+        ("Plan a scalable web architecture", "planning"),
+        ("Summarize these key points", "summarization"),
+        ("What is the capital of France?", "general"),
+    ],
+)
+def test_classify_query(prompt, expected):
+    result = classify_query(prompt)
+
+    assert result.task_type == expected
+    if expected != "general":
+        assert result.signals
+
+
+def test_classify_query_rejects_empty_prompt():
+    with pytest.raises(ValueError, match="prompt must not be empty"):
+        classify_query(" ")
 
 
 def test_router_selects_highest_priority_matching_model():
